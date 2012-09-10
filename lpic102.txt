@@ -1,0 +1,1785 @@
++++++++++++++++++INSTALL A BOOT MANAGER++++++++++++++++++++++++++++++++++++++++++++
+
+++++++++++++++lilo and Grub++++++++++++++++++++
+
+During booting, boot loaders need to know
+	
+	1) Which directory the linux kernel is in usually \boot.
+	2) Which device is the root device.
+
+Boot sequence looks something like this
+
+	BOOTLOADER->KERNEL->/sbin/init
+
+Alternatively a Boot loader can load a RAM disk into memory which contains scripts on 
+how to access the root device. This will be the case when the root device is handled by non
+resident dynamic modules.
+
+	BOOTLOADER->INITRD->KERNEL->/sbin/initrd
+
+Common extended modules
+
+	ext3:	Third extended file system.
+	lvm:	Logical volume support.
+	raidx:	Software raid level x support.
+	scsi:	scsi support.
+
+
+++++++++++++++++++++++Installing LILLO++++++++++++++++++++++++++++++
+
+Lilo is installed in /sbin/lilo
+
+Which in turn reads configuration form /etc/lilo.conf
+
+Lilo cannot read filesystems only offsets upon disks, thus lilo will read information from 
+/etc/lilo.conf and translate this information using a series of maps to be read by lilo at boot type
+
+Main /etc/lilo.conf options.
+
+	boot:		The device upon which Lilo has been installed e.g /dev/hda is the MBR
+	
+	install:	Which second stage to install (boot.b is default)
+
+	prompt:		Give the user a chance to decide which OS to boot
+	
+	timeout:	The ammount of time to prompt (units tenths of seconds)
+	
+	label:		Name of the image that user types at the prompt
+
+	default:	Name of the image which will be booted by default
+
+	image:		Path to the kernel to boot (One can use "other" for a chain loader)
+
+	root:		Name of the device which contains the root / file system.
+
+	read-only:	Mount the file system readonly so that fsck will work.
+
+	append:		Give parameters to a kernel which is statically compiled.
+
+	linear/lba3:	These options are mutually exclusive. Ask lilo to read the disk using Linear block addressing typically used for
+			very large disks. lba3 allows boot time access beyond 1024 cyclinder of the disk.
+
+
+++++++++++++++++++++++++++Installing Grub++++++++++++++++++++++++++++++++++++++++
+
+Grub is installed with the command
+
+	grub-install
+
+Configuration files are stored within
+
+	/boot/grub/menu.lst
+
+or
+	/boot/grub/grub.conf
+
+Unlike LILO grub is a small shell which can read file systems. This allows grub to read data directly from /boot/grub/menu.lst
+or from /boot/grub/grub.conf
+
+Main options in /boot/grub/menu.lst or /boot/grub/grub.conf
+
+
+Global
+
+	default:	The default image which will be booted (first on the list)
+
+	timeout:	Prompt timeout in seconds.
+
+Per Image
+
+
+	title:		Name of the image
+
+	root:		Where the second stage boot loader and kernel are e.g (hd0,0) is /dev/dha
+
+	kernel:		Path to the kernel starting from the previous root e.g /vmlinuz2 
+
+	ro:		read only
+
+	root:		The root file system (Name of the device ???????)
+
+	initrd:		Path to the initial root disk.
+
+
++++++++++++++++++++++++Passing Parameters to Boot Loader+++++++++++++++++++++++++++++++++++++
+
+It is possible to pass parameters at boot time to both lilo and to grub
+
++++++++++Passing parameters to lilo prompt+++++++++++++++++++++++++++++++++
+
+	boot: linux s
+
++++++++++Passing parameters at the Grub prompt+++++++++++++++++++++++++++++++
+
+
+Once grub has succesfully started you will see the main menu screen and a list of parameters 
+
+
+Do the following
+
+	1) Press 'e' to edit a given parameter
+
+	2) scroll down to the line containing kernel and press e again
+
+	3) You can add any option here.
+
+	3) To boot with the altered options press b, otherwise press enter to get back the unaltered line.
+
+Pressing ESC allows you to navigate back to the main menu.
+
+Fortunately the boot loader configuration files /etc/lilo.conf, /boot/grub/menu.lst or /boot/grub/grub.conf allow you to save can be used to save these options.
+
++++++++++++++++++Passing init parameters+++++++++++++++++++++++++++++++++++++++
+
+Boot loaders can pass the runlevel to init
+
+Once the kernel is loaded it will start /sbin/init
+
+If no parameter is passed init will use the default value specfied in /etc/inittab
+
++++++++++++++++++++++Common kernel parameters++++++++++++++++++++++++++++++++++
+
+
+	acpi=:	Toggle ACPI
+
+	init:=	Tell the kernel which program to start from the root device.
+
+	mem:=	Specify the ammount of RAM to use.
+
+	root:= 	Specify the root device.
+
+In etc/lilo.conf the parameters are recorded using "append" e.g
+
+	append= "pci=bisoirq"
+	ram= 16M
+	
+
+
+During boot all kernel messages are log in /var/log/dmesg, this file can be read or flushed to standard out /bin/dmesg
+
+
+
+
+
+
+	
+
+
+
+		
+	
+
+
+
+
++++++++++++++++++SHELLS, SCRIPTING, PROGRAMMING, COMPILING+++++++++++++++++++++++++
+
++++++++++++++++++++Built In Shell Functions+++++++++++++++++++++++++++++++++++++++++
+
+	set:	Without options will display the name and value of each shell variable in a format which
+		can be used for setting or resetting variables.
+
+	OPTIONS
+
+			-a
+				Mark variables and functions which have been modified or created
+				for export to the environment of subsequent commands	
+				
+	
+
+	unset:	Will remove an option from those displayed by set. -f will remove functions -v will remove variables.
+		The exit status for unset is true unless  a name is read only
+
+	
+
+++++++++++++++++++++Shell environment variables++++++++++++++++++++++++++++++++++
+ 
+bash does not require them to be lower case but they are lower case for human readability.
+
+EDITOR:		vi or emacs make your choice.
+
+++++++++++++++++++++++++++++alias++++++++++++++++++++++++++++++++++++++++
+
+Remember no spaces allowed
+
+
+	$alias cp='cp -i'
+
+typing alias on its own allows you to see all of the aliases that have been set.	
+
+	
++++++++++++++++++++++++++++Functions++++++++++++++++++++++++++++++++++++++++++
+
+
+[function] name() {command-list;}
+
+function are allowed to be spread over more than one line at a time.
+
+Function arguements are as follows
+
+	$1, $2 etc positional arguements to the function
+
+	$# The number of arguement passed to the function.
+
+
+
+++++++++++++++++++++++++Configuration Files++++++++++++++++++++++++++++++++++++++++
+
+TYPE OF FILE		LOGIN FILE LOCATION			NON-LOGIN FILE LOCATION
+
+Global			/etc/profile				/etc/bashrc /etc/bash.bashrc
+				/etc/profile.d				
+
+User				~/bash_profile ~/bash_login		~/.bashrc (refs/etc/bashrc) 
+			 	~/.profile				
+
+Other configuration files
+
+~/.bash_logout				Executed when you logout
+
+~/.inputrc					Contains optional key bindings.
+
+
+Profile type files contain environment variables.
+
+Bashr contain aliases and functions
+
+Your can control which files are read when starting bash by using the following
+
+	bash -login (Force a login)
+	bash -norc 
+	bash -noprofile
+
+++++++++++++++++++DEFAULT INFORMATION FOR SETTING UP USERS+++++++++++++++++++++++++
+
+etc/profile should not contain aliases or functions these should be contained in /etc/bashrc which will then be run by the users .bashrc 
+
+/etc/skel should contain all the files needed to populate a new users directory.
+
+
+++++++++++++++++++++++++Scripting++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In order to run the script your must give it executable permisions.
+
+	chmod a+x script
+
+Must also include the shebang line for all scripts as the first line
+
+	#!/bin/bash
+
+Adding & at the end of a command causes it to execute in the background
+
+Alternative methods of calling a script
+
+	bash script_name	Start a new interactive shell which runs the scripts and exits
+	source script_name	Force the current shell to run the script
+	. script_name		same as source
+	exec script_name	same as ./script_name except the current shell will exit once the script
+				has completed.
+
+++++++++++++++++++++++++Return values+++++++++++++++++++++++++++++++++++++++++++
+
+Almost all programms return 0 if they are sucessfull and no zero if they fail.
+
+The value is stored in a specific bash variable $?
+
+++++++++++++++++++++++++++Special Variables++++++++++++++++++++++++++++++++++++++++++++
+
+$0 	:The name of the script
+
+$1- $n 	:All other input variables start 
+
+$*	:List of all variables entered at the command
+
+$!	:PID of the most recent background command
+
+$$	:PID of the current shell
+
+$?	:Exit code of the last command. 
+
+++++++++++++++++++++++++++++break++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+break[n]
+
+Break out from the inner most nested loop
+
++++++++++++++++++++++++++++case++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+case string in
+	pattern1)
+		commands1
+		;;
+	pattern2)
+		commands2
+		;;
+	...
+esac
+
+The patterns use the same form of file globs as in a normal shell
+
+++++++++++++++++++++++++++++continue+++++++++++++++++++++++++++++++++++++++++++++++++++
+
+continue[n]
+
+Skip the remaining commands in a for or while loop resuming with the next iteration of the loop (or skipping n loops)
+
+++++++++++++++++++++++++++++++echo++++++++++++++++++++++++++++++++++++++++++++++++
+
+echo [options][string]
+
+If no string is supplied echo only a new line is echoed
+
+Options
+	-e	Enable the interpretation of escape characters
+
+	-n	Suppress the trailing newline in the output
+
+Usefull escape characters
+
+	\a audible bell
+	
+	\b back space
+	
+	\c Supress the trailing newline
+
+	\f Form feed
+
+++++++++++++++++++++++++++++exit++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+exit[n]
+
+Exit the shell script with status n. If n is ommited the exit status is that of the most recent command
+
+++++++++++++++++++++++++++++for++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+for x in list
+do 
+	commands
+done
+
+If list is ommited it is assumed that positional parmeters from the command line, which are stored in $@
+++++++++++++++++++++++++++++File Tests++++++++++++++++++++++++++++++++++++++++++
+test [ expression ]
+tes 
+Evaluate the conditional expressions and return 0 if true and 1 if false. The spaces around expression are required for the second form.
+
+	-e file: file exists?
+	-O file: files exists and is owned by the effective user.
+	-f file: is file a regular file?
+	-L file: is file a symbolic link?
+	-n string: True if length of string is non zero
+	-r file: True if the file exists and is readable
+	-s file: True if the file exist and has size greater than 0
+	-w file: True if file exists and is writable
+	-x file: True if file exists and is executable
+	-z string: True if string length is zero
+	file1 -ot file2: True if file1 is older than file2
+	string1 = string2: true if strings are equal
+	string1 != string2: True if the two strings are not equal
+
+More than one operation can be cotatenated using
+
+	|| OR
+	&& AND
+	
+++++++++++++++++++++++++++++++Working with numbers++++++++++++++++++++++++++
+
+expr 7 + 3 // or // $((7+3))
+
+comparing values
+
+	-lt <
+	-gt >
+	-le
+	-ge
+	-eq ==
+	-ne !=
+
+++++++++++++++++++++++++until+++++++++++++++++++++++++++++++++++++++++++++
+
+
+until
+	test
+do
+	commands
+done
+
++++++++++++++++++++++while++++++++++++++++++++++++++++++++++++++++++++
+
+while
+	test
+do
+	commands
+done
+
++++++++++++++++++++++++++++Command Substitution+++++++++++++++++++++++++++++++++
+
+$(....)
+
+ls.....` (Result is the same but allows the backslash to escape the dollar symbol backquote and another backslash)
+
+
+++++++++++++++++++++++++++Mailling From Scripts+++++++++++++++++++++++++++++++++
+
+	echo "Script failed" | mail -s "Script failed" root
+
+-s option indicates a quoted subject for the message.
+
+
+
+++++++++++++++++++++++++++break+++++++++++++++++++++++++++
+
+break[n]
+
+break from the current inner most level of the loop or for the n inner most loops
+
+
+++++++++++++++++++++++case++++++++++++++++++++++++++++++++++
+
+case string in
+	pattern1)
+		command1
+	;;
+	pattern2)
+		command2
+	;;
+	
+esac
+
++++++++++++++++++++++++++select++++++++++++++++++++++++++++++++++++
+
+select VARIABLE in SET; do
+	if[ $VARIABLE = CHOICE ]
+		command
+	fi
+	if[ $VARIABLE = CHOICE ]
+		command
+	fi
+done
+
++++++++++++++++++continue+++++++++++++++++++++++++++++++++++++++++
+
+continue[n]
+
+Skip the current (or n loops)
+
+
+++++++++++++++++++echo++++++++++++++++++++++++++++++++++++++++++
+
+echo [options] [string]
+
+Write the string to the standard output. If no string is provided echo only a new line
+
+Options
+
+	-e Enable interpretation of escape characters
+	-n Suppress the trailing newline in the output
+
+Usefull special characters
+
+	\a sound an audible alarm
+	\b insert a backspace
+	\c Supress a trailing newline (same as -s)
+	\f form feed
++++++++++++++++++++++++++exit+++++++++++++++++++++++++++++++++++++++++++++++
+
+exit[n]
+
+exit a script with the status n. If n is not given the return status is that of the most recent command
+
++++++++++++++++++++++++for+++++++++++++++++++++++++++++++=
+
+for x in list
+do
+	commands
+done
+
+Assign each word in list to x in turn and execute commands. If list is ommited it is assume the positional parameters from the command line which are stored in $@ are to be used.
+
++++++++++++++++++++++++function++++++++++++++++++++++++++++++++++
+
+function name
+{
+	commands
+}
+
+Define function name. $1 $2 can be used to define positional parameters within commands
+
++++++++++++++++++++++++++++getopts+++++++++++++++++++++++++++++++++++
+
+getopts string name [args] 
+
+Process command line options or (or args if specified) and check for legal options. The string contains the option letters to be recognized by by getopts when running the script
+
+
++++++++++++++++++++++++++++++if++++++++++++++++++++++++++++++++++++++++
+
+if expression 1
+then
+	...
+elif
+then
+	...
+else
+then
+	...
+fi
+
+
+++++++++++++++++++++++++++++kill+++++++++++++++++++++++++++++++++++
+
+kill [options] IDS
+
+Send signals to each specified process or Job ID  which you must own unless you are a 
+priviledged user. The default signla sent with kill is TERM instructing the process to shutdown
+
+Options
+
+	-l List signals
+	-s signal or -signal Specify signal number or name
+
+++++++++++++++++++++++read+++++++++++++++++++++++++++++++++++++
+
+
+read [options] variable1 [variable2...]
+
+Read one line of standard input and assign each word to a variable. All remaining words will 
+be assigned to the last variable. The default name of the variable is REPLY
+
+e.g
+
+	read -p "File to display:" FILENAME
+	cat $FILENAME
+
++++++++++++++++++++++++return+++++++++++++++++++++++++++++
+
+return [n]
+
+Used within a function to exit the function with status n
+
++++++++++++++++++++++++shift+++++++++++++++++++++++++++++++++
+
+shift [n] 
+
+Shift positional parameters down n elements. If n is omited default is 1
+
++++++++++++++++++++++++seq++++++++++++++++++++++++++++++++++++++++
+
+seq [OPTION] FIRST
+seq [OPTION] FIRST LAST
+seq [OPTION] FIRST INCREMENT
+
+Options
+
+	-f --format = FORMAT user printf style floating point format
+	
+	-s --string = STRING use a string to sepparate numbers (default /n)
+
+	-w --equal_width equalize width by padding with leading zeros.
+
+
+
+++++++++++++++++++++++++++SQL data management++++++++++++++++++++++++++++++++++++++++++++++
+
+My mysql is started on redhat by typing
+	
+	/etc/rc.d/init.d/msql start
+
+This command will automatically create a database in 
+
+	/var/lib/mysql/mysql
+
+
+
+
+105.3 SQL data management
+
+Weight
+	2
+
+Description
+	Candidates should be able to query databases and manipulate data using basic SQL commands. This objective includes performing queries involving joining of 2 tables and/or subselects.
+
+Key Knowledge Areas
+
+    * Use of basic SQL commands.
+    * Perform basic data manipulation.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * insert
+    * update
+    * select
+    * delete
+    * from
+    * where
+    * group by
+    * order by
+    * join
+
+Topic 106: User Interfaces and Desktops
+106.1 Install and configure X11
+
+Weight
+	2
+
+Description
+	Candidates should be able to install and configure X11.
+
+Key Knowledge Areas
+
+    * Verify that the video card and monitor are supported by an X server.
+    * Awareness of the X font server.
+    * Basic understanding and knowledge of the X Window configuration file.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/X11/xorg.conf
+    * xhost
+    * DISPLAY
+    * xwininfo
+    * xdpyinfo
+    * X
+
+106.2 Setup a display manager
+
+Weight
+	2
+
+Description
+	Candidates should be able setup and customize a display manager. This objective covers the display managers XDM (X Display Manger), GDM (Gnome Display Manager) and KDM (KDE Display Manager).
+
+Key Knowledge Areas
+
+    * Turn the display manager on or off.
+    * Change the display manager greeting.
+    * Change default color depth for the display manager.
+    * Configure display managers for use by X-stations.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/inittab
+    * xdm configuration files
+    * kdm configuration files
+    * gdm configuration files
+
+106.3 Accessibility
+
+Weight
+	1
+
+Description
+	Demonstrate knowledge and awareness of accessibility technologies.
+
+Key Knowledge Areas
+
+    * Keyboard Accessibility Settings (AccessX?)
+    * Visual Settings and Themes
+    * Assistive Technology (ATs)
+
+The following is a partial list of the used files, terms and utilities:
+
+    * Sticky/Repeat Keys
+    * Slow/Bounce/Toggle Keys
+    * Mouse Keys
+    * High Contrast/Large Print Desktop Themes
+    * Screen Reader
+    * Braille Display
+    * Screen Magnifier
+    * On-Screen Keyboard
+    * Gestures (used at login, for example gdm)
+    * Orca
+    * GOK
+    * emacspeak
+
+++++++++++++++++ADMINSTRATIVE TASK++++++++++++++++++++++++++++++++++++++
+
+++++++++++++++User Accounts+++++++++++++++++++++++++++++++++++
+
+	/etc/passwd
+
+	Username:Password:UID:GID:comment:home directory: default shell
+
+Username: Treats capitals and lowercase differently so, you can have both Elle and elle on the		same machine.			
+
+UID: positive integers. 0 is uid of root, if you see another account with uid 0 you should be worried that your system has been comprimised
+
+GID: default group of the user
+
+default: can be set to /bin/false so that a user cannot login but can access mail via a remote client such as POP or IMAP. a variant of this scheme uses /bin/passwd which allows the user 		to login and change their password.	
+
+++++++++++++++++Groups+++++++++++++++++++++++++++++++++
+
+	/etc/group
+
+	groupname:passwd:GID:group member list:
+
+passwd: If empty group  does not require a passwd
+
+The user will have a primary group to which the belong, traditionally (Suse Debian) this is called "users" and has GID 
+100
+
+The User Private Group schem (UPG) was introduced by RedHat and changes this convention without changing the way in which
+UNIX groups work. With UPG each new user blenogs to their own primary group. The has the same name as the login-name and GID in the range 500-6000
+
+As a consequence, when using the traditional scheme for groups the users umask is set to 022 whereas in the UPG scheme the umask is set to 002
+
+At any one time only one of the users groups is effective. To change to another effective group the user can call
+
+	newgrp
+
+After newgrp command has been issued calling "groups" will cause the new group to come first.
+
+If the group passwd is set then even users that are not members of the particular group
+can use newgrp to gain access to the group.
+
+The list of groups a users has access to can be found by using the "groups" or "id" command.
+
+
+++++++++++++++++++++++Shadow Password and Shadow group system++++++++++++++++++++
+
+Shadow files are only readable by root
+
++++++++++++++/etc/shadow++++++++++++++++++++++++
+
+Contains encrypted passwds
+
+	username:encrypted passwd:last-passwd-change:min-days:max-days:days-warn:expire-t0-deactive:expire:special
+
+
+last-passwd-change: 	Number of days since the last passwd change
+	
+min-days:		Minimum days until next password change.
+
+max-days:		Before required to change passwd		
+
+days-warn:		The number of days before the password expires that the system will warn you to change your passwd
+
+expire-to-deactive:	The number of days between expirey and deactivation
+
+expire:			The number of days since january 1st 1970 until the account expires.
+
+special:		Reserved for the future.
+
+++++++++++++++++++++/etc/gshadow+++++++++++++++++++++++++++++++
+
+
+Contains encrypted group information
+
+	group name:encrypted password:
+
+If contains a ! instead of an encrypted password then the group has no password
+
++++++++++++++++++++++Command for Managing Users & Groups+++++++++++++++++++++++++++
+
+In
+	/etc/login.defs
+
+This contains
+
+	UID_MIN
+	GID_MIN
+
+All users ids below UID_MIN are for system users (daemons). Similarly for GID_MIN
+
++++++++++++++++++++++++++useradd++++++++++++++++++++++++++++++++++++++
+
+useradd [options] user
+
+Creates a new command using both system defaults and options provided to the command.An intitial passwd must susequently be set for new users using the passwd command. The new users must then change there passwd once the login the first time.
+
+Options
+
+	-b
+	--base-dir The default base directory in which user homer directories are created. This is usually /home but and the user's home directory is /home/$USER 
+
+	-c Comment
+
+	-e The date on which the account will expire or be disabled in the form YYYY-MM_DD. default is that the account will not expire.
+
+	-f inactive-days sets the number of days after a password has expired untill the account
+	is completely disabled.
+
+	-g gid The name or number of the initial login group of the user. The group must exist 
+
+	-G A comma-sepparated list of additional groups to which the user belongs
+
+	-K Can be used to overide parameters in /etc/login.defs
+
+	-k overide skel directory
+
+	-c comment
+	Define a comment field probably the users first name
+
+	-d Homedir
+	Use Homedir as the name of the users home directory
+
+	-m 
+	Create and populate a home directory from /etc/skel
+
+	-M force useradd not to create a home directory even if /etc/login.defs
+
+	-n switch of the UPG group scheme
+
+	-r Specifies the creation of a system account
+
+	-k may specify a non default skeleton directory
+
+	-o Permit the user to have a non unique user id.
+
+	-s shell
+	Use shell as the default for the account
+
+	-p password (md5 encrypted use quotes)
+
+	-D
+	List system default values, this information is also available in /etc/default/useradd
+
+	-s The name of the users login shell if different from default.
+	
+	-u Specify userid. The default is at least UID_MIN and larger than smallest existing user id.
+
++++++++++++++++usermod+++++++++++++++++++++++++++++++++
+
+usermod [options] user
+
+Modify an existing user account.
+
+Options
+	-L
+	Lock the passwd disabling the user account
+
+	-U
+	Unlock the user account 
+
+	-l changes the users login name e.g usermod sally -l sjones
+
+	-m Used in conjunction with -d option. Allows you to add a home directory if one was not added during the initial creation of the account.
+
+	-G group: Add the user to a group
+
+The following options are the same as those from useradd
+
+	-d dir 
+		The users home directory
+	
+	-g 
+		The users initial GID
+
+	-u
+		the users loging name
+
+	-s	
+		the default shell
+
+
+
+If you change a users UID it will not change the uid of the files that they own this can be accomplised by using
+
+	chown -R sally /home/sally
+
+This will of course only change the ownership of files in sally's home directory
+
++++++++++++++++++userdel+++++++++++++++++++++++
+
+
+userdel [-r] user
+
+Delete an existing user account. When combined with -r the users home directory is also deleted
+
+To locat other files that the user has created
+
+	find / -uid 519
+
+
+
++++++++++++++++++++++++++++++++++++++++++++groupadd++++++++++++++++++++++++++++++++++++++++++++++
+
+groupadd group
+
+Add a new group to the system. In the event that group needs a passwd must subsequently use gpasswd.
+
+Options	
+	
+	-f Exit with success if the group already exists (handy for scripting)
+
+	-g Specifies the group id manually. The default is at least GID_MIN and larger than any group which may already exist
+
+	-o Permits a group to have a non unique id
+
+	-K Allows defaults in /etc/login.defs 
+
+	-r Allow you to create GID below GID_MIN
+
+	-f Used into conjuntion with -o
+
+	
+++++++++++++++++++++++groupmod+++++++++++++++++++++++++++++
+
+group [options] group
+
+Options
+
+	-n name:	Change the name of the group to name 
+	
+	-g GID:		
+
++++++++++++++++++++++groupdel++++++++++++++++++++++++++++++
+
+groupdel group
+
+As with userdel this can leave orphaned files on your system.
+
+Use
+
+	find / -gid 509
+
++++++++++++++++passwd+++++++++++++++++++++++++++++++++
+
+passwd [options] username
+
+Interactively set the password for username, this command is used after useradd. The passwd cannot be entered on the command line.
+
+Options
+
+	-l Available only to the superuser this command locks the password for that account. This is done by prefixing the encrypted password with a ! mark.
+
+	-k system should update an expired account
+
+	-u unlock. useradd creates an account which is locked with no password, using passwd in this way will create and account with no passwd, it will
+	 return and error but you can use -f to force it.
+
+	-d parameter removes the password from an account rendering it password less.
+
+	-S displays information about the account.
+
+
+
++++++++++++++++gpasswd++++++++++++++++++++++++++++
+
+gpasswd groupname
+
+Set interactively the password for a group. The password cannot be set on the command line.
+
+	-a user:	Add a user
+	
+	-d user:	Delete a user from the group
+
+	-R:		Configures the group so that users cannot enter using newgrp
+
+	-r:		Removes passwd from the group
+
+	-A user[,]	Comma sepparated list to specify the groups users
+
+	-M user[,]	Works like -A but also adds the list of users to the list of group members
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Set up the shadow password system by using the following commands
+
++++++++++++++++++pwconv++++++++++++++++++++++++++++
+
+Convert a standard password system to a shadow password system
+
++++++++++++++++++++pwunconv++++++++++++++++++++++++++++
+
+Revert a shadow system to standard
+
++++++++++++++++++++++++grpconv+++++++++++++++++++++++++++++++++
+
+Convert a standard group system to a shadow group system
+
+++++++++++++++++++++grpunconv+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Revert a shadow group configuration to a standard group file
+
++++++++++++++++++++Obtaining information About yourself+++++++++++++++++++++++++++++++++++++++
+
+id [options] [user-name]
+
+options
+
+	-u print the effective id's of the user.
+	-g print effective group id
+	-G print all group ids
+	-n print name instead of id 
+
+++++++++++++++++++DEFAULT INFORMATION FOR SETTING UP USERS+++++++++++++++++++++++++
+
+etc/profile should not contain aliases or functions these sho uld be contained in /etc/bashrc which will then be run by the users .bashrc 
+
+/etc/skel should contain all the files needed to populate a new users directory.
+
+/etc/login.defs contains the following information
+
+	MAIL_DIR	The mail spool directory
+	
+	PASS_MAX_DAYS,	passwd aging controls 
+	PASS_MIN_DAYS, 
+	PASS_MAX_LEND, 
+	PASS_WARN_AGE
+
+	UID_MIN,UID_MAX	max mimimum values for automatic UID selction in useradd
+
+	GID_MAX,GID_MIN	max min GID seleciton for groupadd
+
+	CREAT_HOME	automatically create a homedir when using useradd
+
+
+
+
+Topic 107: Administrative Tasks
+107.1 Manage user and group accounts and related system files
+
+Weight
+	5
+
+Description
+	Candidates should be able to add, remove, suspend and change user accounts.
+
+Key Knowledge Areas
+
+    * Add, modify and remove users and groups.
+    * Manage user/group info in password/group databases.
+    * Create and manage special purpose and limited accounts.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/passwd
+    * /etc/shadow
+    * /etc/group
+    * /etc/skel
+    * chage
+    * groupadd
+    * groupdel
+    * groupmod
+    * passwd
+    * useradd
+    * userdel
+    * usermod
+
+107.2 Automate system administration tasks by scheduling jobs
+
+Weight
+	4
+
+Description
+	Candidates should be able to use cron or anacron to run jobs at regular intervals and to use at to run jobs at a specific time.
+
+Key Knowledge Areas
+
+    * Manage cron and at jobs.
+    * Configure user access to cron and at services.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/cron.{d,daily,hourly,monthly,weekly}
+    * /etc/at.deny
+    * /etc/at.allow
+    * /etc/crontab
+    * /etc/cron.allow
+    * /etc/cron.deny
+    * /var/spool/cron/*
+    * crontab
+    * at
+    * atq
+    * atrm
+
+107.3 Localisation and internationalisation
+
+Weight
+	3
+
+Description
+	Candidates should be able to localize a system in a different language than English. As well, an understanding of why LANG=C is useful when scripting.
+
+Key Knowledge Areas
+
+    * Locale settings.
+    * Timezone settings.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/timezone
+    * /etc/localtime
+    * /usr/share/zoneinfo
+    * Environment variables:
+          o LC_*
+          o LC_ALL
+          o LANG
+    * /usr/bin/locale
+    * tzselect
+    * tzconfig
+    * date
+    * iconv
+    * UTF-8
+    * ISO-8859
+    * ASCII
+    * Unicode
+
+Topic 108: Essential System Services
+108.1 Maintain system time
+
+Weight
+	3
+
+Description
+	Candidates should be able to properly maintain the system time and synchronize the clock via NTP.
+
+Key Knowledge Areas
+
+    * Set the system date and time.
+    * Set the hardware clock to the correct time in UTC.
+    * Configure the correct timezone.
+    * Basic NTP configuration.
+    * Knowledge of using the pool.ntp.org service
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /usr/share/zoneinfo
+    * /etc/timezone
+    * /etc/localtime
+    * /etc/ntp.conf
+    * date
+    * hwclock
+    * ntpd
+    * ntpdate
+    * pool.ntp.org
+
+108.2 System logging
+
+Weight
+	2
+
+Description
+	Candidates should be able to configure the syslog daemon. This objective also includes configuring the logging daemon to send log output to a central log server or accept log output as a central log server.
+
+Key Knowledge Areas
+
+    * syslog configuration files
+    * syslog
+    * standard facilities, priorities and actions
+
+The following is a partial list of the used files, terms and utilities:
+
+    * syslog.conf
+    * syslogd
+    * klogd
+    * logger
+
+108.3 Mail Tranfer Agent (MTA) basics
+
+Weight
+	3
+
+Description
+	Candidates should be aware of the commonly available MTA programs and be able to perform basic forward and alias configuration on a client host. Other configuration files are not covered.
+
+Key Knowledge Areas
+
+    * Create e-mail aliases.
+    * Configure e-mail forwarding.
+    * Knowledge of commonly available MTA programs (postfix, sendmail, qmail, exim) (no configuration)
+
+The following is a partial list of the used files, terms and utilities:
+
+    * ~/.forward
+    * sendmail emulation layer commands
+    * newaliases
+    * mail
+    * mailq
+    * postfix
+    * sendmail
+    * exim
+    * qmail
+
+108.4 Manage printers and printing
+
+Weight
+	2
+
+Description
+	Candidates should be able to manage print queues and user print jobs using CUPS and the LPD compatibility interface.
+
+Key Knowledge Areas
+
+    * Basic CUPS configuration (for local and remote printers).
+    * Manage user print queues.
+    * Troubleshoot general printing problems.
+    * Add and remove jobs from configured printer queues.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * CUPS configuration files, tools and utilities
+    * /etc/cups
+    * lpd legacy interface (lpr, lprm, lpq)
+
+Topic 109: Networking Fundamentals
+109.1 Fundamentals of internet protocols
+
+Weight
+	4
+
+Description
+	Candidates should demonstrate a proper understanding of TCP/IP network fundamentals.
+
+Key Knowledge Areas
+
+    * Demonstrate an understanding network masks.
+    * Knowledge of the differences between private and public "dotted quad" IP-Addresses.
+    * Setting a default route.
+    * Knowledge about common TCP and UDP ports (20, 21, 22, 23, 25, 53, 80, 110, 119, 139, 143, 161, 443, 465, 993, 995).
+    * Knowledge about the differences and major features of UDP, TCP and ICMP.
+    * Knowledge of the major differences between IPv4 and IPV6.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/services
+    * ftp
+    * telnet
+    * host
+    * ping
+    * dig
+    * traceroute
+    * tracepath
+
+109.2 Basic network configuration
+
+Weight
+	4
+
+Description
+	Candidates should be able to view, change and verify configuration settings on client hosts.
+
+Key Knowledge Areas
+
+    * Manually and automatically configure network interfaces
+    * Basic TCP/IP host configuration.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/hostname
+    * /etc/hosts
+    * /etc/resolv.conf
+    * /etc/nsswitch.conf
+    * ifconfig
+    * ifup
+    * ifdown
+    * route
+    * ping
+
+109.3 Basic network troubleshooting
+
+Weight
+	4
+
+Description
+	Candidates should be able to troubleshoot networking issues on client hosts.
+
+Key Knowledge Areas
+
+    * Manually and automatically configure network interfaces and routing tables to include adding, starting, stopping, restarting, deleting or reconfiguring network interfaces.
+    * Change, view, or configure the routing table and correct an improperly set default route manually.
+    * Debug problems associated with the network configuration.
+
+The following is a partial list of the used files, terms and utilities:
++++++++++++++++++++++++++++++++++++++++++++++++++++++/etc/services++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+A plain text ASCII file providing a mapping between textual names for internet serves and their underlying ports and protocol types
+
+Port number below 1024 can only be bound to by root. This is so clients connecting to low numbered prots can trust that the service running on th port is
+the standard implementation
+
+The presence of an entry in /etc/services does not necesarily mean that the service is running on that machine
+
+Each line in the file describes a service and is of the form
+
+	service-name	port/protocol	[aliases ...]
+
+
+service-name
+		is the friendly name the service is known by and lookup up under. It is case sensitive. Often the client program is named after the service-name
+
+
+port
+		decimal number of the port
+
+protocol	
+		This value should match an entry in /etc/protocol
+
+aliases
+		optional tab sepparated list of other aliases for the service 
+
+
+
+    * ftp
+    * telnet
+++++++++++++++++++++++++++++++++++++++++++++++++++host+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+SYNOPSIS
+
+	host {name} [server]
+
+DESCRIPTION
+
+	host is a simple utility which can lookup names or ip addresses
+
+	name is the domain name that is to be looked up. It can also be a dotted-decimal IPv4 address or a colon-delimited IPv6 address. In which case host will by default perform a reverse
+	lookup for that address. 
+
+	server is an optional argument which is either the name or ip address that host should querry rather then the servers listed in /etc/resolve.conf
+
+OPTIONS
+
+	-a 
+		option is equivalent to setting the -v option and asking host to make a querry of type ANY
+
+	-N 
+		option sets the number of dots that have to be in name for it to be considered absolute. The default value is that define using the ndots statement in /etc/resolve.conf, or 
+		1 if no ndots statement is present. Names with fewer dot are considered as relative names and will be searched for in the domains listed in the search or domain directive 
+		in /etc/resolve.conf
+
+
+	-4 	forces host to only user IPv4 querry transport
+
+	-6	forces host only user IPv6 querry transport
+
+
++++++++++++++++++++++++++++++++++++++++++++/etc/resolve.conf/+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+DESCRIPTION
+
+	The resolver is a set of routines in the C library which provide access to the Internet Domain Name System
+
+
+OPTIONS
+
+	nameserver	Name Server IP address
+
+		Internet address in dot notation of a name server that the resolver should query. 3 servers maybe listed per keyword, and they are searched in order. If no 
+		nameservers are present the default is to use the nameserver on the local machine.
+
+	domain		Local Domain Name
+
+		Most queries for names within this domain can use short names relative to the local domain. If no domain entry is present, the domain is determined 
+		
+++++++++++++++++++++++++++++++++++++++++++++ifup, ifdown ifstatus ifrenew ifprobe+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+SYNOPSIS
+	if{up,down,status,probe} <configuration-name><hardware-description>[-o options]
+
+Notation:
+
+	Device: Always a peice of hardware
+	Interface: Name that a device gets once it has been registered.
+	Configuation: Is a set of parameters which are associated with an interface
+
+DESCRIPTION
+
+ifup:		Is used to bring up a preconfigured interface for networking it is usually invoked by the network script at boot time or by PCMCIA/hotplug system
+
+ifdown:		Sets down the interface and flushes all its addresses. Its is possible to check if the interface is still being used before setting it down. If configured
+		it may then get rid of the using processes or refuse setting it down. To configure investigate /set/sysconfig/network/config
+
+ifstatus:	Check if interface and its routes are configured correctly
+
+ifprobe		Checks to see if any of the configuration files have been changed since the interface was up
+
+<hardware-description>	As there is no fixed relation between the device and name of the interface received from the kernel
+			it maybe necessary to specify the hardware exactly. The hardware description might be the current interface name, the MAC address or the 
+			bus or the bus location where the device resides. It has to be compliant with the device naming rules specified in getcfg. ifup uses getcfg to obtain
+			all missing information for example the interface name of a device with given hardware-description. ifup uses getcfg also to get the best matching
+			configuration for the interface. Every configuration is stored in files below /etc/sysconfig/network which are named ifcfg-<configuration-name>
+
+<configuration-name>	Name of the configuration which should be used to setup the interface. It may be used to circumvent the automatic search for a configuration with getcfg. In this case the
+			the configuration names are not restricted. So for exampe if you have a configuration file ifcfg-my_special you may call ifup ifcfg-my_special <hrd-descr>
+
+OPTIONS
+
+The following are options to be specified after the -o switch
+
+	auto:		Only set up the interface if the configuration has STARTMODE=auto (or boot, onboot or hotplug)
+
+
+	boot:		alias of auto
+
+	hotplug:	Like auto but do some extra jobs, because hotplug indicates that the interface was just (un)registered. 
+			These extra jobs contain (if configured) starting/stoping ifplugd, renaming inerface and removing all
+			status files at ifdown
+	
+	
+	manual:		This is default operation mode and sets up interfaces with STARTMODE=manual. If option rc is used that implies mode auto, you can force mode 'manual'
+
+	
+	rc: 		Special option for the use in rcnetwork (/etc/init.d/network)
+
+	dhcp:		Indicates that script is called from dhcp cliend. When a interface has BOOTPROTO=dhcp ifup/down does not execute any post action immediately. After dhcp client got a
+			lease and has set an ip addres, it call ifup again, this with option dhcp. In this run we finish interface setup.
+
+	nodeps:		If there are interfaces based on this interface, ifdown takes these depending interfaces down first. If you don't like that use 'nodeps.
+
+	prov=<n>	Use provider <n> instead that from config file. Only usefull for dialup interfaces
+
+	debug 		Be verbose
+
+	(no)syslog	With nosyslog the scripts don't send messages to syslog even if the configuration variable USE_SYSLOG is set to "yes". This is default for ifstatus only. If you want also 
+			ifstatus messages send to syslog then call it with syslog 
+
+FILES
+
+	/sbin/ifup	
+			The script itself
+
+	/etc/sysconfig/network/config
+
+			General configuration options
+
+	/etc/sysconfig/network/ifcfg-<configuration-name>
+		
+			Files containing configurations of devices. An example that shows a typical configuration with the name ifcf-eth0
+
+			IPADDRESS=10.10.11.184
+			NETMASK-255.255.00.0
+			BROADCASET=10.10.255.255
+			STARTMODE=onboot
+			
+	/etc/sysconfig/network/ifroute-<configuration-name>
+
+		You can specify individual routes for every configuration in these files
+
+	/etc/sysconfig/network/if-{up,down}.d
+		Scripts in these directories will be executed when any interface is started or brought down. They have to be executable and may also be binary. 
+		The execution of these programs is controlled by the variable GLOBAL_POST_UP_EXEC and GLOBAL_PRE_DOWN_EXEC in the network configuration file
+		/etc/sysconfig/network/config
+
+	/etc/sysconfig/network/ifservices-<configuration-name>
+		If you dont have a permanent network connection and you want certain services not to be started at boot time but started later when the network configuration has been
+		started then you can add those services here
+
+
+rcnetwork
+
+	At boot time network devices are initiliazed asynchronously via hotplug. Once this initilisation process registered an interface for it thi will alos trigger a hotplug event 
+	which will call ifup. If service netwrok was still not started ifup will just exit. As soon as service network is active ifup will do its job and set up the interface. So the job
+	of network start consist of
+
+		-set the 'network active' flag
+		-set up all interfaces already available
+		-wait for mandatory interfaces already available
+		-set up tunnel, vlan et al
+
+	At boot time the scripts try to determine the list of mandatory devices automatically. It considers all interfaces that have startmode 'auto'. It will wait 20 seconds for them but 
+	will fail if they do not arrive in this time.
+
+	Alternatively you may specify all mandatory devices manually in the variable MANDATORY_DEVICES in the file /etc/sysconfig/network/config. You may also change the timeout with
+	WAIT_FOR_INTERFACES
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ROUTE++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+route [-CFvnee]
+
+route [-v] [-A family] add [-net|-host] target [netmask Nm] [gw Gw] [metric N] [mss M] [window W] [irtt I] [reject] [mod] [dun] [reinstate] [[dev] If]
+route [-v] [-A family] del [-net|-host] target [gw Gw] [netmask Nm] [metric N] [[dev] If]
+route [-V] [-version]  [-h] [-help]
+
+
+DESCRIPTION
+
+Manipulates the kernels IP routing tables. Its primary use is to set up static routes to specific hosts or network via an interface after it has been configured with ifconfig
+
+OPTIONS
+
+	-A family
+	
+		use specified addres family (e.g 'inet' user 'route --help' for a full list)
+
+	-F
+		operate on the kernels FIB (Forwarding Information Base) routing table. This is the default
+
+	-C	
+		operate on the kernels routing cache
+
+	-v 	
+		select verbose operation
+
+	-n
+		show numeric addresses rather then trying to determine symbolic hostnames. Usefull if trying to determine why the route to the name server has vanised.
+
+	-e	
+		use netstat format for displaying the routing table. -ee will generate a very long line with all parameters from the routing table
+
+	del	
+		delete a route
+
+	add	
+		add a new route
+
+	target
+		The destination network or host. You can provide IP addresses in dotted decimal or host/network names.
+
+	-net 
+		The target is a network
+
+	-host 
+		The traget is a host
+
+	netmask M
+
+		When adding network route, the netmask to be used.
+
+	gw GW
+
+		route packets via a gateway. NOTE the specified gateway must be reachable first. This usually mean the you have to set up a static rout to the gateway beforhand. If you
+		specify the adress of one of you local interfaces, it will be used to decide about the interface to which the packet should be routed to. This is a BSDis compatibility hack
+
+	metric
+		set the metric to M (this value in the routing table is used by routing daemons)
+	
+	mss M
+		set the TCP Maximum Segment Size (MSS) for connections over this route to M Bytes. The default is the device MTU minus headers or a lower MTU when the path mtu discovery occured. 
+		This setting can be used to force smaller TCP packets on the other end when path mtu discovery does not work 
+
+	window W
+		set the TCP window size for connection sover this route to W bytes. This is typically only used on AX.25 netowrk an with drivers unable to handle back to back frames.
+
+	irtt I
+		set the initial round trip time for TCP connectionsover this route to I milliseconds (1-12000). This is typically only used on AX.25 networks. If ommited the RFC 1122 default of
+		300ms is used
+
+	reject
+		install a blocking route, which will force the route lookup to fail. This for example used to mask out networks before using the default route. This is NOT for firewalling
+
+	mod dyn reinstate
+
+		install a dynamic or modified route. These are for diagnostic purposes are usually only set by daemons.
+
+	dev If
+	
+		Force the route to be associate with the specified device, as the kernel witll otherwise try to determine the deive on its own ( by checking already existing routes and 
+		device specifications, and where the route is added to)  
+	
+
+OUTPUT 
+
+When not used with del/add the program will display all the routing table.
+
+Routing table columsn are printed in the following order
+
+	Destination: 
+		
+		The destination host or network
+
+	Gateway:
+		
+		The gateway address. If no gateway is set for the route an asterisk is displayed
+	
+
+	Genmask:
+		
+		The netmask for the destination 255.255.255.255 is used for a host and 0.0.0.0 is used for the default route.
+		
+	RouteFlags:
+
+		U Route is up.
+		H Target is host
+		G Uses a gateway
+		R Reinstate route for dynamic routing
+		D Dynamically installed by a daemon or redirect
+		M Modified by routing daemon or redirect
+		A installed by addrconf
+		C cache entry
+		! Rejected route
+
+	Metric:
+
+		Distance in hops to the target
+
+	Ref:	
+		Number of references to this route. This is displayed for compatibility with other route commands but is not used in the linux kernel
+
+	Use:
+		A count of lookups for the route. Depending on the user of -F -C the user is either cached misses (-F) or hits (-C)
+
+	Iface:
+		The interface to which packert for this route are sent.
+++++++++++++++++++++++ifconfig++++++++++++++++++++++++++++++++++
+
+	ifconfig [interface]
+	ifconfig interface [aftype] options | address ...
+
+ifconfig is used to configure the kernel-resident network interfaces. It is used at boot time to set up interfaces as necessary. After that it is usually only needed when debugging
+
+If no arguments ifconfig displays the status of all active interfaces
+
+If a single argument is given it will display its status
+
+If -a is given it display all interfaces even those that are not active.
+
+Otherwise ifconfig will configure an interface.
+
+OPTIONS 
+
+	interface:	The name of an interface for example eth0 is the 				first ethernet connection
+
+	up:		Causes te interface to be activate. It is implicitly
+			included if an adress is assigned to the interface
+
+	down:		Causes the driver for this interface to shutdown.
+
+	 
+	[-]arp:		Option is specific to broadcast networks such as 				Ethernets or packet radio. Enables the use of 				        Address Resolution protocol (ARP) to detect the 			        physical addresses of hosts attached to the network. 				For broadcast networks it is on by default, if ARP is
+			disable ifconfig displays the NOARP flag.
+
+	[-]promisc	If selected this interface will accept all packets on
+			the network
+
+	[-]allmulti	If selected all multicast packets on the network will be
+			accept by the interface
+
+	mtu N		If select sets the maximum transfer rate of the 
+	    		interface
+
+	netmask addr	Set the network mask for this interface. This defaults 
+			to the usual class A B C network  mask as derived from 
+			interface IP address but it can be set to any value.
+
+	add[del] addr/prefixlen
+			Add/delete an IPv6 address for an interface
+
+	tunnel ::aa.bb.cc.dd
+			Create a new SIT (IPv6 in IPv4) tunnelling to a given
+			direction
+
+	irq addr	Set the interupt line for this device. Not all devices
+	    		can dynamically change there addresses
+
+	io_addr addr	Set the I/O space address for this device
+			
+	mem_start addr	Set the start address for shared memory used by this dev			ice
+	 
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+    * ifup
+	ifdown
+    * route
+    * host
+    * hostname
+    * dig
+    * netstat
+    * ping
+    * traceroute
+
+109.4 Configure client side DNS
+
+Weight
+	2
+
+Description
+	Candidates should be able to configure DNS on a client host.
+
+Key Knowledge Areas
+
+    * Demonstrate the use of DNS on the local system.
+    * Modify the order in which name resolution is done.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/hosts
+    * /etc/resolv.conf
+    * /etc/nsswitch.conf
+
+Topic 110: Security
+110.1 Perform security administration tasks
+
+Weight
+	3
+
+Description
+	Candidates should know how to review system configuration to ensure host security in accordance with local security policies.
+
+Key Knowledge Areas
+
+    * Audit a system to find files with the suid/sgid bit set.
+    * Set or change user passwords and password aging information.
+    * Being able to use nmap and netstat to discover open ports on a system.
+    * Set up limits on user logins, processes and memory usage.
+    * Basic sudo configuration and usage.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * find
+    * passwd
+    * lsof
+    * nmap
+    * chage
+    * netstat
+    * sudo
+    * /etc/sudoers
+    * su
+    * usermod
+    * ulimit
+
+110.2 Setup host security
+
+Weight
+	3
+
+Description
+	Candidates should know how to set up a basic level of host security.
+
+Key Knowledge Areas
+
+    * Awareness of shadow passwords and how they work.
+    * Turn off network services not in use.
+    * Understand the role of TCP wrappers.
+
+The following is a partial list of the used files, terms and utilities:
+
+    * /etc/nologin
+    * /etc/passwd
+    * /etc/shadow
+    * /etc/xinetd.d/*
+    * /etc/xinetd.conf
+    * /etc/inetd.d/*
+    * /etc/inetd.conf
+    * /etc/inittab
+    * /etc/init.d/*
+    * /etc/hosts.allow
+    * /etc/hosts.deny
+
+110.3 Securing data with encryption
+
+Weight
+	3
+
+Description
+	The candidate should be able to use puplic key techniques to secure data and communication.
+
+Key Knowledge Areas
+
+    * Perform basic OpenSSH 2 client configuration and usage.
+    * Understand the role of OpenSSH? 2 server host keys
+    * Perform basic GnuPG configuration and usage.
+    * Understand SSH port tunnels (including X11 tunnels).
+
+The following is a partial list of the used files, terms and utilities:
+
+    * ssh
+    * ssh-keygen
+    * ssh-agent
+    * ssh-add
+    * ~/.ssh/id_rsa and id_rsa.pub
+    * ~/.ssh/id_dsa and id_dsa.pub
+    * /etc/ssh/ssh_host_rsa_key and ssh_host_rsa_key.pub
+    * /etc/ssh/ssh_host_dsa_key and ssh_host_dsa_key.pub
+    * ~/.ssh/authorized_keys
+    * /etc/ssh_known_hosts
+    * gpg
+    * ~/.gnupg/*
+
+
